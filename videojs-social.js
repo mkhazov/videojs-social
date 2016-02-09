@@ -102,7 +102,9 @@
             return el.detachEvent(type, callback);
         },
 
-        social;
+        social,
+        SocialButton,
+        SocialOverlay;
 
     var handleEvent = function (e) {
         e.preventDefault();
@@ -168,8 +170,8 @@
     /*
      * The "Share" control bar button
      */
-    videojs.SocialButton = videojs.extend(videojs.getComponent('Button'), {
-        init: function (player, options) {
+    SocialButton = videojs.extend(videojs.getComponent('Button'), {
+        constructor: function (player, options) {
             videojs.getComponent('Button').call(this, player, options);
 
             // Bind touchstart for mobile browsers and prevent default
@@ -190,20 +192,23 @@
         }
     });
 
-    videojs.SocialButton.prototype.createEl = function () {
-        return videojs.getComponent('Button').prototype.createEl.call(this, 'div', {
+    SocialButton.prototype.createEl = function () {
+        return videojs.getComponent('ClickableComponent').prototype.createEl.call(this, 'div', {
             className: 'vjs-share-control vjs-control',
+            innerHTML: '<div class="vjs-control-content"><span class="vjs-control-text">Share</span></div>'
+        }, {
             role: 'button',
             'aria-live': 'polite',
-            innerHTML: '<div class="vjs-control-content"><span class="vjs-control-text">Share</span></div>'
         });
     };
+
+    videojs.registerComponent('SocialButton', SocialButton);
 
     /*
      * The overlay panel that is toggled when the SocialButton is clicked
      */
-    videojs.SocialOverlay = videojs.extend(videojs.getComponent('Component'), {
-        init: function (player, options) {
+    SocialOverlay = videojs.extend(videojs.getComponent('Component'), {
+        constructor: function (player, options) {
 
             var embedCode,
                 start,
@@ -349,7 +354,7 @@
     /*
      * Iterates through the list of selected social services and binds the href to the anchor
      */
-    videojs.SocialOverlay.prototype._bindServiceButtons = function (serviceButtons) {
+    SocialOverlay.prototype._bindServiceButtons = function (serviceButtons) {
 
         var player = this.player(),
             options = this.options_;
@@ -382,7 +387,7 @@
     /*
      *  Binds the correct href url to the matching service button
      */
-    videojs.SocialOverlay.prototype._bindServiceButton = function (service, encodedUrl, encodedTitle, encodedDescription, encodedPoster, posterUrl) {
+    SocialOverlay.prototype._bindServiceButton = function (service, encodedUrl, encodedTitle, encodedDescription, encodedPoster, posterUrl) {
 
         // Switch on the requested service
         switch (service) {
@@ -445,14 +450,12 @@
         }
     };
 
-    videojs.SocialOverlay.prototype.createEl = function () {
+    SocialOverlay.prototype.createEl = function () {
         var player = this.player(),
             options = this.options_;
 
         return videojs.getComponent('Component').prototype.createEl.call(this, 'div', {
             className: 'vjs-social-overlay vjs-hidden',
-            'aria-role': 'dialog',
-            'aria-label': player.localize('Sharing Dialog'),
             'tabindex': -1,
             innerHTML: '<div class="vjs-social-cancel" role="button">' +
             '<div class="vjs-control-text" aria-label="' + player.localize('Close button') + '">' + player.localize('Close') + '</div>' +
@@ -477,13 +480,16 @@
             '<button tabindex="0" class="vjs-restart vjs-hidden">' +
             '<div class="vjs-control-content"><span class="vjs-control-text">' + player.localize('Restart') + '</span></div>' +
             '</button>'
+        }, {
+            'aria-role': 'dialog',
+            'aria-label': player.localize('Sharing Dialog'),
         });
     };
 
     /*
      * Computes the new embed code
      */
-    videojs.SocialOverlay.prototype.getEmbedCode = function () {
+    SocialOverlay.prototype.getEmbedCode = function () {
         // Declare variables
         var offset, offsetTextBox, playerOptions, embedCode, urlTemplate, player, options;
 
@@ -534,7 +540,7 @@
     /*
      * Determines the URL to be dispayed in the share dialog
      */
-    videojs.SocialOverlay.prototype._getUrl = function () {
+    SocialOverlay.prototype._getUrl = function () {
         var url,
             options = this.options_;
 
@@ -553,7 +559,7 @@
         return url;
     };
 
-    videojs.SocialOverlay.prototype._getUrlWithTime = function () {
+    SocialOverlay.prototype._getUrlWithTime = function () {
         var options = this.options_,
             url = this._getUrl(),
             offset;
@@ -574,7 +580,7 @@
     /*
      * Updates the title based on the media date or the custom options setting
      */
-    videojs.SocialOverlay.prototype._getTitle = function () {
+    SocialOverlay.prototype._getTitle = function () {
         var playerOptions,
             options = this.options_,
             player = this.player(),
@@ -597,7 +603,7 @@
     /*
      * Converts an offset from hh:mm:ss to the YouTube format of 1h27m14s
      */
-    videojs.SocialOverlay.prototype._convertOffset = function (offset) {
+    SocialOverlay.prototype._convertOffset = function (offset) {
 
         var segments,
             seconds = 0,
@@ -643,7 +649,7 @@
     /*
      * Unobtrusively attaches events to a button
      */
-    videojs.SocialOverlay.prototype._bindSocialButton = function (elementSelector, url) {
+    SocialOverlay.prototype._bindSocialButton = function (elementSelector, url) {
 
         var elt, handler;
 
@@ -670,7 +676,7 @@
     /*
      * Iterates through the list of selected social services and creates their html
      */
-    videojs.SocialOverlay.prototype._addSocialButtons = function (services) {
+    SocialOverlay.prototype._addSocialButtons = function (services) {
 
         var servicesHtml, service;
 
@@ -689,7 +695,7 @@
     /*
      * addServiceButton - Creates a link that appears as a social sharing button.
      */
-    videojs.SocialOverlay.prototype._addServiceButton = function (service) {
+    SocialOverlay.prototype._addServiceButton = function (service) {
 
         var link = '';
 
@@ -733,12 +739,14 @@
         return link;
     };
 
-    videojs.SocialOverlay.prototype._restartPlayer = function () {
+    SocialOverlay.prototype._restartPlayer = function () {
         var player = this.player();
         player.socialOverlay.hide();
         player.currentTime(0);
         player.play();
     };
+
+    videojs.registerComponent('SocialOverlay', SocialOverlay);
 
     // register the plugin
     videojs.plugin('social', social);
