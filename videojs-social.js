@@ -127,19 +127,6 @@
         // Merge options with the buttons defaults
         settings = videojs.mergeOptions(defaults, options);
 
-        // Make sure that at least one social service is specified
-        //  If not, then do not add the social button
-        if (!(settings &&
-            settings.services &&
-            (settings.services.facebook ||
-            settings.services.twitter ||
-            settings.services.google ||
-            settings.services.tumblr ||
-            settings.services.pinterest ||
-            settings.services.linkedin))) {
-            throw new Error('videojs-social requires at least one service to be enabled');
-        }
-
         // If we are being re-initialized then remove the old stuff
         if (player.controlBar.socialButton) {
             player.controlBar.removeChild(player.controlBar.socialButton);
@@ -235,9 +222,6 @@
             addEvent(restartButton, 'click', videojs.bind(this, this._restartPlayer));
             addEvent(restartButton, 'activate', videojs.bind(this, this._restartPlayer));
 
-            // Bind service buttons using options
-            this._bindServiceButtons(options.services);
-
             // Hide offset if deeplinking is disabled
             if (!options.deeplinking) {
                 start = this.el().querySelector('.vjs-social-start');
@@ -313,10 +297,6 @@
 
             // Compute the new embed code
             embedCodeTextBox.setAttribute('value', this.getEmbedCode());
-
-            // rebind buttons
-            this._bindServiceButtons(options.services);
-
         },
 
         enableRestartButton: function () {
@@ -346,109 +326,8 @@
                 this.previouslyPlaying = true;
                 this.player().pause();
             }
-            // Set focus to first social service link
-            this.el().querySelector('.vjs-share-options a:first-child').focus();
         }
     });
-
-    /*
-     * Iterates through the list of selected social services and binds the href to the anchor
-     */
-    SocialOverlay.prototype._bindServiceButtons = function (serviceButtons) {
-
-        var player = this.player(),
-            options = this.options_;
-
-        var service,
-            encodedUrl,
-            encodedTitle,
-            encodedDescription,
-            encodedPoster,
-            posterUrl = player.poster();
-
-        // Encode share url properties
-        encodedUrl = encodeURIComponent(this._getUrl());
-        encodedTitle = encodeURIComponent(this._getTitle());
-        encodedDescription = encodeURIComponent(options.description);
-
-        // if there is a poster image, encode the url
-        if (posterUrl) {
-            encodedPoster = encodeURIComponent(posterUrl);
-        }
-
-        // Iterate through supported services and bind buttons
-        for (service in serviceButtons) {
-            if (serviceButtons[service] === true) {
-                this._bindServiceButton(service, encodedUrl, encodedTitle, encodedDescription, encodedPoster, posterUrl);
-            }
-        }
-    };
-
-    /*
-     *  Binds the correct href url to the matching service button
-     */
-    SocialOverlay.prototype._bindServiceButton = function (service, encodedUrl, encodedTitle, encodedDescription, encodedPoster, posterUrl) {
-
-        // Switch on the requested service
-        switch (service) {
-            // Facebook
-            case 'facebook':
-                // Bind Facebook button
-                this._bindSocialButton(
-                    '.vjs-share-facebook',
-                    'https://www.facebook.com/sharer/sharer.php?u={URL}&title={TITLE}'.replace('{URL}', encodedUrl).replace('{TITLE}', encodedTitle)
-                );
-                break;
-
-            // Google+
-            case 'google':
-                // Bind Google+ button
-                this._bindSocialButton(
-                    '.vjs-share-gplus',
-                    'https://plus.google.com/share?url={URL}'.replace('{URL}', encodedUrl)
-                );
-                break;
-
-            // Twitter
-            case 'twitter':
-                // Bind Twitter button
-                this._bindSocialButton(
-                    '.vjs-share-twitter',
-                    'https://twitter.com/intent/tweet?original_referer=https%3A%2F%2Fabout.twitter.com%2Fresources%2Fbuttons&text={TITLE}&tw_p=tweetbutton&url={URL}'.replace('{URL}', encodedUrl).replace('{TITLE}', encodedTitle)
-                );
-                break;
-
-            // Tumblr
-            case 'tumblr':
-                // Bind Tumblr button
-                this._bindSocialButton(
-                    '.vjs-share-tumblr',
-                    'http://www.tumblr.com/share?v=3&u={URL}&t={TITLE}'.replace('{URL}', encodedUrl).replace('{TITLE}', encodedTitle)
-                );
-                break;
-
-            // Pinterest
-            case 'pinterest':
-                // Bind Pinterest button if there is a poster image available otherwise the link will not work
-                this._bindSocialButton(
-                    '.vjs-share-pinterest',
-                    'https://pinterest.com/pin/create/button/?url={URL}{POSTER}&description={TITLE}&is_video=true'.replace('{URL}', encodedUrl).replace('{TITLE}', encodedTitle).replace('{POSTER}', encodedPoster ? '&media=' + encodedPoster : '')
-                );
-                break;
-
-            // LinkedIn
-            case 'linkedin':
-                // Bind LinkedIn button
-                this._bindSocialButton(
-                    '.vjs-share-linkedin',
-                    'https://www.linkedin.com/shareArticle?mini=true&url={URL}&title={TITLE}&summary={DESCRIPTION}&source=Classic'.replace('{URL}', encodedUrl).replace('{TITLE}', encodedTitle).replace('{DESCRIPTION}', encodedDescription)
-                );
-                break;
-
-            default:
-                throw new Error('An unsupported social service was specified.');
-        }
-    };
 
     SocialOverlay.prototype.createEl = function () {
         var player = this.player(),
@@ -461,12 +340,7 @@
             '<div class="vjs-control-text" aria-label="' + player.localize('Close button') + '">' + player.localize('Close') + '</div>' +
             '</div>' +
             '<form>' +
-            '<legend>' + player.localize('Share Video') + ': ' + this._getTitle() + '</legend>' +
-            '<label>' + player.localize('Share via') + ':' +
-            '<ul class="vjs-share-options">' +
-            this._addSocialButtons(options.services) +
-            '</ul>' +
-            '</label>' +
+            '<legend>' + player.localize('Share Video') + ' ' + this._getTitle() + '</legend>' +
             '<div class="vjs-social-link-options">' +
             '<label class="vjs-social-start" aria-label="' + player.localize('Start From') + '">' + player.localize('Start From') + ': <input class="start-offset-textbox" type="text" tabindex="9" title="The offset must be specified using the following pattern: hh:mm:ss" placeholder="hh:mm:ss" maxlength="10" value="' + options.offset + '" /></label>' +
             '<div class="vjs-social-direct-link-container">' +
@@ -644,99 +518,6 @@
         }
 
         return '';
-    };
-
-    /*
-     * Unobtrusively attaches events to a button
-     */
-    SocialOverlay.prototype._bindSocialButton = function (elementSelector, url) {
-
-        var elt, handler;
-
-        // Find the element, if not available, that means if was not selected for sharing
-        elt = this.el().querySelector(elementSelector);
-
-        // If element found then bind events, if not found, it isn't a supported service
-        if (elt) {
-            elt.href = url;
-            // Remove previous event if exists
-            removeEvent(elt, 'touchend', handleEvent);
-
-            // Bind touchstart for mobile browsers and prevent defaults
-            addEvent(elt, 'touchend', handleEvent);
-
-            // Remove previous event if exists
-            removeEvent(elt, 'click', handleEvent);
-
-            // Bind click event
-            addEvent(elt, 'click', handleEvent);
-        }
-    };
-
-    /*
-     * Iterates through the list of selected social services and creates their html
-     */
-    SocialOverlay.prototype._addSocialButtons = function (services) {
-
-        var servicesHtml, service;
-
-        // Iterate through supported services and construct html
-        servicesHtml = '';
-        for (service in services) {
-            if (services[service] === true) {
-                servicesHtml += this._addServiceButton(service);
-            }
-        }
-
-        // return html
-        return servicesHtml;
-    };
-
-    /*
-     * addServiceButton - Creates a link that appears as a social sharing button.
-     */
-    SocialOverlay.prototype._addServiceButton = function (service) {
-
-        var link = '';
-
-        // Switch on the requested service
-        switch (service) {
-            // Facebook
-            case 'facebook':
-                link = '<li><a class="vjs-share-facebook" aria-role="link" aria-label="Share on Facebook" tabindex="1" title="Facebook" target="_blank"><span class="vjs-control-text">Facebook</span></a></li>';
-                break;
-
-            // Google+
-            case 'google':
-                link = '<li><a class="vjs-share-gplus" aria-role="link" aria-label="Share on Google Plus" tabindex="2" title="Google+" target="_blank"><span class="vjs-control-text">Google+</span></a></li>';
-                break;
-
-            // Twitter
-            case 'twitter':
-                link = '<li><a class="vjs-share-twitter" aria-role="link" aria-label="Share on Twitter" tabindex="3" title="Twitter" target="_blank"><span class="vjs-control-text">Twitter</span></a></li>';
-                break;
-
-            // Tumblr
-            case 'tumblr':
-                link = '<li><a class="vjs-share-tumblr" aria-role="link" aria-label="Share on Tumblr" tabindex="4" title="Tumblr" target="_blank"><span class="vjs-control-text">tumblr</span></a></li>';
-                break;
-
-            // Pinterest
-            case 'pinterest':
-                link = '<li><a class="vjs-share-pinterest" aria-role="link" aria-label="Share on Pinterest" tabindex="5" title="Pinterest" target="_blank"><span class="vjs-control-text">Pinterest</span></a></li>';
-                break;
-
-            // LinkedIn
-            case 'linkedin':
-                link = '<li><a class="vjs-share-linkedin" aria-role="link" aria-label="Share on LinkedIn" tabindex="6" title="LinkedIn" target="_blank"><span class="vjs-control-text">LinkedIn</span></a></li>';
-                break;
-
-            default:
-                throw new Error('An unsupported social service was specified.');
-        }
-
-        // Return the constructed link
-        return link;
     };
 
     SocialOverlay.prototype._restartPlayer = function () {
