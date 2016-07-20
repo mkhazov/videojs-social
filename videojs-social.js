@@ -63,6 +63,12 @@
 (function (window, videojs) {
     'use strict';
 
+    videojs.addLanguage('ru', {
+      'Share Video': 'Поделиться',
+      'Direct Link': 'Прямая ссылка',
+      'Embed Code': 'Код для встраивания плеера'
+    });
+
     // Allocate all variables to be used
     var defaults = {
             title: '',
